@@ -13,11 +13,12 @@ namespace tgame {
 
 		List<List<Char>> display = new List<List<Char>>() { };
 
-		public Game(int width = 128, int height = 32) {
+		public Game(int width = 64, int height = 16) {
 			Width = width;
 			Height = height;
-			Console.SetWindowSize(Width + 1, Height);
-			Console.SetBufferSize(Width + 1, Height);
+			Player = new Character(width / 2 - 1, height / 2 - 1);
+			Console.SetWindowSize(Width + 1, Height + 1);
+			Console.SetBufferSize(Width + 1, Height + 1);
 			Console.CursorVisible = false;
 
 			// initialize display
@@ -30,6 +31,8 @@ namespace tgame {
 						display[i].Add(Char.Nothing);
 				}
 			}
+
+			display[Player.Y][Player.X] = Char.Player;
 
 			// initialize threads
 			Dictionary<string, Thread> threads = new Dictionary<string, Thread>() {
@@ -45,17 +48,42 @@ namespace tgame {
 				while (true) {
 					Render();
 
-					Thread.Sleep(100);
+					Thread.Sleep(1000);
 				}
 			}
 
 			void InputThread() {
 				while (true) {
-					Render();
-
-					Thread.Sleep(100);
+					// get key
+					var x = Console.ReadKey();
+					switch (x.KeyChar) {
+						case 'w':
+							updatePlayerLocation(Player.X, Player.Y, Player.X, Player.Y - 1, Direction.Up);
+							break;
+						case 'a':
+							updatePlayerLocation(Player.X, Player.Y, Player.X - 1, Player.Y, Direction.Down);
+							break;
+						case 's':
+							updatePlayerLocation(Player.X, Player.Y, Player.X, Player.Y + 1, Direction.Left);
+							break;
+						case 'd':
+							updatePlayerLocation(Player.X, Player.Y, Player.X + 1, Player.Y, Direction.Right);
+							break;
+						case ' ':
+							Player.Shoot();
+							break;
+					}
 				}
 			}
+		}
+
+		void updatePlayerLocation(int prevx, int prevy, int curx, int cury, Direction facing) {
+			display[prevy][prevx] = Char.Nothing;
+			display[cury][curx] = Char.Player;
+
+			Player.X = curx;
+			Player.Y = cury;
+			Player.Facing = facing;
 		}
 
 		public void Render() {
@@ -82,7 +110,7 @@ namespace tgame {
 				case Char.Player:
 					return '@';
 				case Char.Lazer:
-					return '=';
+					return '+';
 				default:
 					return ' ';
 			}
@@ -94,5 +122,12 @@ namespace tgame {
 		Wall,
 		Player,
 		Lazer,
+	}
+
+	public enum Direction {
+		Up,
+		Right,
+		Down,
+		Left
 	}
 }
