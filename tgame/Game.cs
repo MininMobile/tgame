@@ -12,6 +12,7 @@ namespace tgame {
 		public Character Player { get; }
 
 		List<List<Char>> display = new List<List<Char>>() { };
+		List<Lazer> bullets = new List<Lazer>() { };
 
 		public Game(int width = 64, int height = 16) {
 			Width = width;
@@ -48,15 +49,14 @@ namespace tgame {
 				while (true) {
 					Render();
 
-					Thread.Sleep(1000);
+					Thread.Sleep(100);
 				}
 			}
 
 			void InputThread() {
 				while (true) {
 					// get key
-					var x = Console.ReadKey();
-					switch (x.KeyChar) {
+					switch (Console.ReadKey().KeyChar) {
 						case 'w':
 							updatePlayerLocation(Player.X, Player.Y, Player.X, Player.Y - 1, Direction.Up);
 							break;
@@ -70,7 +70,7 @@ namespace tgame {
 							updatePlayerLocation(Player.X, Player.Y, Player.X + 1, Player.Y, Direction.Right);
 							break;
 						case ' ':
-							Player.Shoot();
+							bullets.Add(Player.Shoot());
 							break;
 					}
 				}
