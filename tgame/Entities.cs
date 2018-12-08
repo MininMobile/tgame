@@ -28,7 +28,9 @@ namespace tgame {
 
 		public Lazer Shoot() {
 			return new Lazer(
-				Facing == Direction.Left || Facing == Direction.Right ? Facing == Direction.Left ? X - 1 : X + 1 : X, Facing == Direction.Up || Facing == Direction.Down ? Facing == Direction.Up ? Y - 1 : Y + 1 : Y, Facing
+				Facing == Direction.Left || Facing == Direction.Right ? Facing == Direction.Left ? X - 1 : X + 1 : X,
+				Facing == Direction.Up || Facing == Direction.Down ? Facing == Direction.Up ? Y - 1 : Y + 1 : Y,
+				Facing
 			);
 		}
 	}

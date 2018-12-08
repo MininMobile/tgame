@@ -26,7 +26,7 @@ namespace tgame {
 			for (int i = 0; i < Height; i++) {
 				display.Add(new List<Char>() { });
 				for (int j = 0; j < Width; j++) {
-					if (j == 0 || j == Width - 1 || i == 0 || i == Height - 1)
+					if (j == (width / 4) * 3)
 						display[i].Add(Char.Wall);
 					else
 						display[i].Add(Char.Nothing);
@@ -56,12 +56,21 @@ namespace tgame {
 
 			void UpdateThread() {
 				while (true) {
-					foreach (Lazer l in lazers) {
+					for (int i = 0; i < lazers.ToArray().Length; i++) {
+						Lazer l = lazers[i];
+
 						if (l.Age == 0) {
+							if (display[l.Y][l.X] == Char.Wall) {
+								lazers.Remove(l);
+								return;
+							}
+
 							l.Age++;
 							display[l.Y][l.X] = l.Rep;
 							continue;
 						}
+
+						l.Age++;
 
 						switch (l.Facing) {
 							case Direction.Up:
@@ -108,12 +117,14 @@ namespace tgame {
 		}
 
 		void updateEntityLocation(int prevx, int prevy, int curx, int cury, Direction facing, Entity entity) {
-			if (display.ToArray().Length - 1 <= cury || 0 >= cury) {
+			entity.Facing = facing;
+
+			if (Height - 1 <= cury || 0 >= cury) {
 				CallCollisionAction(); return;
-			} else if (display[cury].ToArray().Length - 1 <= curx || 0 >= curx) {
+			} else if (Width - 1 <= curx || 0 >= curx) {
 				CallCollisionAction(); return;
 			} else if (display[cury][curx] == Char.Wall) {
-				CallCollisionAction(); return;
+				CallCollisionAction(true); return;
 			}
 
 			display[prevy][prevx] = Char.Nothing;
@@ -121,11 +132,20 @@ namespace tgame {
 
 			entity.X = curx;
 			entity.Y = cury;
-			entity.Facing = facing;
 
-			void CallCollisionAction() {
+			void CallCollisionAction(bool onWall = false) {
 				switch (entity.CollisionAction) {
-					
+					case CollisionAction.Die:
+						if (entity.GetType() == typeof(Lazer)) {
+							if (onWall)
+								display[cury][curx] = Char.Wall;
+
+							display[prevy][prevx] = Char.Nothing;
+							lazers.Remove((Lazer)entity);
+						}
+						break;
+					case CollisionAction.Stop:
+						break;
 				}
 			}
 		}
@@ -135,7 +155,10 @@ namespace tgame {
 
 			for (int i = 0; i < Height; i++) {
 				for (int j = 0; j < Width; j++)
-					buffer += CharToString(display[i][j]);
+					if (j == 0 || j == Width - 1 || i == 0 || i == Height - 1)
+						buffer += "#";
+					else
+						buffer += CharToString(display[i][j]);
  
 				if (i != Height - 1)
 					buffer += '\n';
