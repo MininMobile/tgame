@@ -14,10 +14,25 @@ namespace tgame {
 		List<List<Char>> display = new List<List<Char>>() { };
 		List<Lazer> lazers = new List<Lazer>() { };
 
-		public Game(int width = 64, int height = 16) {
-			Width = width;
-			Height = height;
-			Player = new Character(width / 2 - 1, height / 2 - 1, true);
+		public Game(List<List<string>> level) {
+			// prepare level
+			foreach (var l in level) {
+				List<Char> line = new List<Char>() { };
+
+				foreach(var c in l) {
+					line.Add(StringToChar(c[0]));
+				}
+
+				display.Add(line);
+			}
+
+			// set variables
+			Width = level[0].ToArray().Length;
+			Height = level.ToArray().Length;
+
+			Player = new Character(Width / 2 - 1, Height / 2 - 1, true);
+
+			// initialize console
 			Console.SetWindowSize(Width + 1, Height + 1);
 			Console.SetBufferSize(Width + 1, Height + 1);
 			Console.CursorVisible = false;
@@ -26,7 +41,7 @@ namespace tgame {
 			for (int i = 0; i < Height; i++) {
 				display.Add(new List<Char>() { });
 				for (int j = 0; j < Width; j++) {
-					if (j == (width / 4) * 3)
+					if (j == (Width / 4) * 3)
 						display[i].Add(Char.Wall);
 					else
 						display[i].Add(Char.Nothing);
@@ -182,6 +197,23 @@ namespace tgame {
 					return '+';
 				default:
 					return ' ';
+			}
+		}
+
+		public static Char StringToChar(char s) {
+			switch (s) {
+				case ' ':
+					return Char.Nothing;
+				case '#':
+					return Char.Wall;
+				case '@':
+					return Char.Player;
+				case '!':
+					return Char.Enemy;
+				case '+':
+					return Char.Lazer;
+				default:
+					return Char.Nothing;
 			}
 		}
 	}
