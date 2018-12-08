@@ -12,12 +12,12 @@ namespace tgame {
 		public Character Player { get; }
 
 		List<List<Char>> display = new List<List<Char>>() { };
-		List<Lazer> bullets = new List<Lazer>() { };
+		List<Lazer> lazers = new List<Lazer>() { };
 
 		public Game(int width = 64, int height = 16) {
 			Width = width;
 			Height = height;
-			Player = new Character(width / 2 - 1, height / 2 - 1);
+			Player = new Character(width / 2 - 1, height / 2 - 1, true);
 			Console.SetWindowSize(Width + 1, Height + 1);
 			Console.SetBufferSize(Width + 1, Height + 1);
 			Console.CursorVisible = false;
@@ -37,8 +37,9 @@ namespace tgame {
 
 			// initialize threads
 			Dictionary<string, Thread> threads = new Dictionary<string, Thread>() {
-				{ "render", new Thread(RenderThread) },
-				{ "input", new Thread(InputThread) }
+				{ "update", new Thread(UpdateThread) },
+				{ "input", new Thread(InputThread) },
+				{ "render", new Thread(RenderThread) }
 			};
 
 			foreach (var thread in threads) {
@@ -53,37 +54,80 @@ namespace tgame {
 				}
 			}
 
+			void UpdateThread() {
+				while (true) {
+					foreach (Lazer l in lazers) {
+						if (l.Age == 0) {
+							l.Age++;
+							display[l.Y][l.X] = l.Rep;
+							continue;
+						}
+
+						switch (l.Facing) {
+							case Direction.Up:
+								updateEntityLocation(l.X, l.Y, l.X, l.Y - 1, Direction.Up, l);
+								break;
+							case Direction.Right:
+								updateEntityLocation(l.X, l.Y, l.X + 1, l.Y, Direction.Right, l);
+								break;
+							case Direction.Down:
+								updateEntityLocation(l.X, l.Y, l.X, l.Y + 1, Direction.Down, l);
+								break;
+							case Direction.Left:
+								updateEntityLocation(l.X, l.Y, l.X - 1, l.Y, Direction.Left, l);
+								break;
+						}
+					}
+
+					Thread.Sleep(100);
+				}
+			}
+
 			void InputThread() {
 				while (true) {
 					// get key
 					switch (Console.ReadKey().KeyChar) {
 						case 'w':
-							updatePlayerLocation(Player.X, Player.Y, Player.X, Player.Y - 1, Direction.Up);
+							updateEntityLocation(Player.X, Player.Y, Player.X, Player.Y - 1, Direction.Up, Player);
 							break;
-						case 'a':
-							updatePlayerLocation(Player.X, Player.Y, Player.X - 1, Player.Y, Direction.Down);
+						case 'a': 
+							updateEntityLocation(Player.X, Player.Y, Player.X - 1, Player.Y, Direction.Left, Player);
 							break;
-						case 's':
-							updatePlayerLocation(Player.X, Player.Y, Player.X, Player.Y + 1, Direction.Left);
+						case 's': 
+							updateEntityLocation(Player.X, Player.Y, Player.X, Player.Y + 1, Direction.Down, Player);
 							break;
-						case 'd':
-							updatePlayerLocation(Player.X, Player.Y, Player.X + 1, Player.Y, Direction.Right);
+						case 'd': 
+							updateEntityLocation(Player.X, Player.Y, Player.X + 1, Player.Y, Direction.Right, Player);
 							break;
 						case ' ':
-							bullets.Add(Player.Shoot());
+							lazers.Add(Player.Shoot());
 							break;
 					}
 				}
 			}
 		}
 
-		void updatePlayerLocation(int prevx, int prevy, int curx, int cury, Direction facing) {
-			display[prevy][prevx] = Char.Nothing;
-			display[cury][curx] = Char.Player;
+		void updateEntityLocation(int prevx, int prevy, int curx, int cury, Direction facing, Entity entity) {
+			if (display.ToArray().Length - 1 <= cury || 0 >= cury) {
+				CallCollisionAction(); return;
+			} else if (display[cury].ToArray().Length - 1 <= curx || 0 >= curx) {
+				CallCollisionAction(); return;
+			} else if (display[cury][curx] == Char.Wall) {
+				CallCollisionAction(); return;
+			}
 
-			Player.X = curx;
-			Player.Y = cury;
-			Player.Facing = facing;
+			display[prevy][prevx] = Char.Nothing;
+			display[cury][curx] = entity.Rep;
+
+			entity.X = curx;
+			entity.Y = cury;
+			entity.Facing = facing;
+
+			void CallCollisionAction() {
+				switch (entity.CollisionAction) {
+					
+				}
+			}
 		}
 
 		public void Render() {
@@ -109,6 +153,8 @@ namespace tgame {
 					return '#';
 				case Char.Player:
 					return '@';
+				case Char.Enemy:
+					return '!';
 				case Char.Lazer:
 					return '+';
 				default:
@@ -121,6 +167,7 @@ namespace tgame {
 		Nothing,
 		Wall,
 		Player,
+		Enemy,
 		Lazer,
 	}
 
@@ -129,5 +176,10 @@ namespace tgame {
 		Right,
 		Down,
 		Left
+	}
+
+	public enum CollisionAction {
+		Die,
+		Stop
 	}
 }
