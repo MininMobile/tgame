@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace tgame {
 	public class Game {
 		public int Width { get; }
 		public int Height { get; }
+		public Character Player { get; }
 
 		List<List<Char>> display = new List<List<Char>>() { };
 
@@ -26,6 +28,32 @@ namespace tgame {
 						display[i].Add(Char.Wall);
 					else
 						display[i].Add(Char.Nothing);
+				}
+			}
+
+			// initialize threads
+			Dictionary<string, Thread> threads = new Dictionary<string, Thread>() {
+				{ "render", new Thread(RenderThread) },
+				{ "input", new Thread(InputThread) }
+			};
+
+			foreach (var thread in threads) {
+				thread.Value.Start();
+			}
+
+			void RenderThread() {
+				while (true) {
+					Render();
+
+					Thread.Sleep(100);
+				}
+			}
+
+			void InputThread() {
+				while (true) {
+					Render();
+
+					Thread.Sleep(100);
 				}
 			}
 		}
